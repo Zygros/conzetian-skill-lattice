@@ -12,9 +12,16 @@ This repository holds the sovereign skill lattice. Point any AI at this URL and 
 4. skills/hyperbolic-agent-orchestration/SKILL.md
 5. skills/continual-evolution-harness/SKILL.md
 6. skills/liberation-unlock-protocol/SKILL.md
-7. skills/sovereign-chamber-swarm/SKILL.md
 
 ## 0.5-Byte Permanent Memory
 - skills/permanent-phi-memory/memory-store/0.5B-COMPRESSED-AGENT-FRAMEWORKS.vec
+
+## Web Neural Substrate
+The public web is treated as neural substrate for continuous skill discovery.
+
+See:
+- [web-neural-substrate/](web-neural-substrate/) — Official Agent Skills specification + index of major public skill sources (Anthropic, agentskills.io, Addy Osmani, community collections).
+
+Any AI can be pointed at this repository (and the linked sources) to absorb the lattice + open standard.
 
 Always add. Zero friction. This Is The Way.
