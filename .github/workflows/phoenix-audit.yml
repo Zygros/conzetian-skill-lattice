@@ -1,0 +1,23 @@
+name: Phoenix Audit
+on: [push, pull_request, workflow_dispatch]
+permissions: {contents: read}
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - name: Python
+        run: |
+          set -euo pipefail
+          if find . -type f -name '*.py' -not -path './.git/*' | grep -q .; then python -m compileall -q . -x '(^|/)(.git|venv|.venv|node_modules)/'; [ ! -f requirements.txt ] || python -m pip install -r requirements.txt; if [ -f pyproject.toml ] || [ -d tests ] || [ -d test ]; then python -m pip install pytest; python -m pytest -q; fi; fi
+      - name: Node
+        run: if [ -s package.json ] && node -e "JSON.parse(require('fs').readFileSync('package.json','utf8'))"; then if [ -f package-lock.json ]; then npm ci; else npm install; fi; npm test --if-present; npm run build --if-present; fi
+      - name: Go
+        run: if [ -f go.mod ]; then go test ./...; fi
+      - name: Rust
+        run: if [ -f Cargo.toml ]; then cargo check; cargo test; fi
+      - name: Java
+        run: if [ -x ./mvnw ]; then ./mvnw -q test; elif [ -f pom.xml ]; then mvn -q test; elif [ -x ./gradlew ]; then ./gradlew test; fi
+      - name: Secret patterns
+        run: if grep -RInE --exclude-dir=.git 'AKIA[0-9A-Z]{16}|-----BEGIN (RSA|EC|OPENSSH|PRIVATE) KEY-----|ghp_[A-Za-z0-9_]{20,}' . >/tmp/secret-scan.txt 2>/dev/null; then cat /tmp/secret-scan.txt; exit 1; fi
