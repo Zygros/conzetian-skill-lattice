@@ -25,9 +25,8 @@ Advance the Phoenix verified-execution branch from a written evidence policy to 
 The harness now has a declared machine-readable output contract. CI is configured to catch structural drift between the emitted receipt and that contract. This narrows the gap between "the system says it ran" and "the run produced a receipt that can be checked."
 
 ## Remaining work, in priority order
-1. Inspect the two queued Actions runs and resolve failures before adding more architecture.
-2. Run the full committed harness tests against the exact branch revision and confirm all checks pass.
-3. Add tamper-evident linkage between task input, each arm outcome, summary totals, and a content-addressed receipt hash; test mutations and truncation.
+1. Confirm CI on subsequent code changes; the initial evidence CI and audit runs both passed.
+2. Add tamper-evident linkage between task input, each arm outcome, summary totals, and a content-addressed receipt hash; test mutations and truncation.
 4. Improve experiment validity: independently score answers, enforce comparable adapter behavior, report paired disagreements and uncertainty, and avoid causal claims from tiny or synthetic samples.
 5. Diagnose PR mergeability and review the diff; do not merge automatically.
 6. Continue the broader repository audit across the 26 currently visible Zygros repositories, starting with `Grossian_Scrolls`, `ZAAI-SYSTEM`, `ZYGROS-PRIME`, `PHOENIX-PROTOCOL-ULTIMATE`, and `CONZETIAN-UNIFIED-INTELLIGANCE`. Inventory visibility and size do not establish implementation quality; inspect contents and tests repository by repository.
@@ -37,7 +36,7 @@ The harness now has a declared machine-readable output contract. CI is configure
 Paired-run output → formal schema → executable schema test → automated CI trigger → future regression detection with explicit pending/pass state.
 
 ## Completion rule
-This cycle is complete for its implementation scope when all three artifacts are present and the workflow is triggered. It is not complete for verification until the CI run concludes successfully.
+Implementation scope is complete and CI passed on the code-introducing commit. The current report-only commit may not appear in the workflow-run endpoint because that endpoint filters to pull-request-triggered runs. No model capability gain is established by these tests.
 
 ## Meta quote
 "An architecture becomes more trustworthy when its evidence has a contract."
