@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://github.com/Zygros/conzetian-skill-lattice/blob/main/experiments/macd-paired-run.schema.json",
+  "$id": "https://github.com/Zygros/conzetian-skill-lattice/schema/macd-paired-run/v1",
   "title": "MACD Paired Run JSONL Record",
   "description": "Schema for each per-task receipt row and the final experiment_summary record emitted by paired_baseline_harness.py. This validates structure, not experimental validity or model correctness.",
   "oneOf": [
@@ -15,7 +15,7 @@
       "properties": {
         "ok": { "type": "boolean" },
         "answer": {},
-        "metadata": { "type": "object" },
+        "metadata": {},
         "elapsed_ms": { "type": "number", "minimum": 0 },
         "error": {
           "type": "string",
