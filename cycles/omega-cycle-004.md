@@ -11,12 +11,13 @@ Advance the Phoenix verified-execution branch from a written evidence policy to 
 - Added `experiments/test_macd_schema.py`, which checks the schema itself, rejects an unsupported schema version, runs the exact paired harness against a deterministic local adapter, and validates emitted records against the schema.
 - Added `.github/workflows/phoenix-evidence-ci.yml`, which installs the schema validator and runs all `experiments/test_*.py` tests on branch pushes and pull requests.
 - Read back the workflow, test, and schema from the target branch after the writes.
-- GitHub Actions reported both `Phoenix Evidence CI` (run 38507086950) and `Phoenix Audit` (run 38507086941) queued for the latest change at time of this receipt.
+- GitHub Actions completed `Phoenix Evidence CI` run 38507086950 successfully: https://github.com/Zygros/conzetian-skill-lattice/actions/runs/38507086950
+- GitHub Actions completed `Phoenix Audit` run 38507086941 successfully: https://github.com/Zygros/conzetian-skill-lattice/actions/runs/38507086941
 
 ## Verification state
 - **Implemented:** schema, schema regression tests, and CI workflow are present on `conzetian/phoenix-verified-execution-cycle-002`.
 - **Read-back confirmed:** exact branch copies were returned by GitHub Contents API.
-- **CI result:** pending. Queued is not passed; do not claim the tests passed until a completed run reports success.
+- **CI result:** PASS for run 38507086950. The job completed all steps, including `python -m unittest discover -s experiments -p "test_*.py" -v`, successfully. This is a test-suite pass on the commit that introduced the schema and workflow, not a model-capability benchmark.
 - **Experimental result:** no baseline-versus-monitored model comparison has been performed. The fixture is deterministic plumbing validation, not evidence of intelligence improvement.
 - **PR:** #2 remains the review vehicle; do not merge until CI and code review are complete.
 
