@@ -53,13 +53,13 @@ class MacdSchemaTests(unittest.TestCase):
             output = root / "receipts.jsonl"
             adapter = root / "adapter.py"
             tasks.write_text(
-                json.dumps({"task_id": "case-1", "input": {"x": 1}, "expected": 2}) + "\\n",
+                json.dumps({"task_id": "case-1", "input": {"x": 1}, "expected": 2}) + "\n",
                 encoding="utf-8"
             )
             adapter.write_text(
-                "import json,sys\\n"
-                "task=json.loads(sys.stdin.readline())\\n"
-                "print(json.dumps({'answer':task['input']['x']+1,'metadata':{'test':'ok'}}))\\n",
+                "import json,sys\n"
+                "task=json.loads(sys.stdin.readline())\n"
+                "print(json.dumps({'answer':task['input']['x']+1,'metadata':{'test':'ok'}}))\n",
                 encoding="utf-8"
             )
             command = f"{sys.executable} {adapter}"
