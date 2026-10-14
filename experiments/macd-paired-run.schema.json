@@ -1,0 +1,106 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/Zygros/conzetian-skill-lattice/blob/main/experiments/macd-paired-run.schema.json",
+  "title": "MACD Paired Run JSONL Record",
+  "description": "Schema for each per-task receipt row and the final experiment_summary record emitted by paired_baseline_harness.py. This validates structure, not experimental validity or model correctness.",
+  "oneOf": [
+    { "$ref": "#/$defs/taskReceipt" },
+    { "$ref": "#/$defs/summary" }
+  ],
+  "$defs": {
+    "sha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+    "outcome": {
+      "type": "object",
+      "required": ["ok", "elapsed_ms"],
+      "properties": {
+        "ok": { "type": "boolean" },
+        "answer": {},
+        "metadata": { "type": "object" },
+        "elapsed_ms": { "type": "number", "minimum": 0 },
+        "error": {
+          "type": "string",
+          "enum": ["adapter_nonzero_exit", "adapter_invalid_json", "adapter_missing_answer", "adapter_timeout", "adapter_not_found"]
+        },
+        "returncode": { "type": "integer" },
+        "stderr": { "type": "string" },
+        "stdout": { "type": "string" },
+        "output": {},
+        "detail": { "type": "string" },
+        "timeout_seconds": { "type": "number", "exclusiveMinimum": 0 }
+      },
+      "allOf": [
+        {
+          "if": { "properties": { "ok": { "const": true } }, "required": ["ok"] },
+          "then": { "required": ["answer"] },
+          "else": { "required": ["error"] }
+        }
+      ],
+      "additionalProperties": false
+    },
+    "taskReceipt": {
+      "type": "object",
+      "required": [
+        "schema_version", "task_id", "task_sha256", "arm_order_seed",
+        "outcomes", "baseline_correct", "baseline_error", "monitored_correct", "monitored_error"
+      ],
+      "properties": {
+        "schema_version": { "const": "macd-paired-run/v1" },
+        "task_id": { "type": "string", "minLength": 1 },
+        "task_sha256": { "$ref": "#/$defs/sha256" },
+        "arm_order_seed": { "type": "integer" },
+        "outcomes": {
+          "type": "object",
+          "required": ["baseline", "monitored"],
+          "properties": {
+            "baseline": { "$ref": "#/$defs/outcome" },
+            "monitored": { "$ref": "#/$defs/outcome" }
+          },
+          "additionalProperties": false
+        },
+        "baseline_correct": { "type": "boolean" },
+        "baseline_error": { "type": "boolean" },
+        "monitored_correct": { "type": "boolean" },
+        "monitored_error": { "type": "boolean" }
+      },
+      "additionalProperties": false
+    },
+    "summary": {
+      "type": "object",
+      "required": [
+        "schema_version", "record_type", "created_unix", "task_file", "task_file_sha256",
+        "task_count", "baseline_command", "monitored_command", "seed", "timeout_seconds",
+        "totals", "baseline_accuracy", "monitored_accuracy",
+        "accuracy_delta_monitored_minus_baseline", "interpretation_boundary"
+      ],
+      "properties": {
+        "schema_version": { "const": "macd-paired-run/v1" },
+        "record_type": { "const": "experiment_summary" },
+        "created_unix": { "type": "integer", "minimum": 0 },
+        "task_file": { "type": "string" },
+        "task_file_sha256": { "$ref": "#/$defs/sha256" },
+        "task_count": { "type": "integer", "minimum": 1 },
+        "baseline_command": { "type": "string", "minLength": 1 },
+        "monitored_command": { "type": "string", "minLength": 1 },
+        "seed": { "type": "integer" },
+        "timeout_seconds": { "type": "number", "exclusiveMinimum": 0 },
+        "totals": {
+          "type": "object",
+          "required": ["baseline_correct", "monitored_correct", "pairs_complete", "baseline_errors", "monitored_errors"],
+          "properties": {
+            "baseline_correct": { "type": "integer", "minimum": 0 },
+            "monitored_correct": { "type": "integer", "minimum": 0 },
+            "pairs_complete": { "type": "integer", "minimum": 0 },
+            "baseline_errors": { "type": "integer", "minimum": 0 },
+            "monitored_errors": { "type": "integer", "minimum": 0 }
+          },
+          "additionalProperties": false
+        },
+        "baseline_accuracy": { "type": "number", "minimum": 0, "maximum": 1 },
+        "monitored_accuracy": { "type": "number", "minimum": 0, "maximum": 1 },
+        "accuracy_delta_monitored_minus_baseline": { "type": "number", "minimum": -1, "maximum": 1 },
+        "interpretation_boundary": { "type": "string", "minLength": 1 }
+      },
+      "additionalProperties": false
+    }
+  }
+}
