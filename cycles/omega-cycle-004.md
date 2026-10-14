@@ -27,10 +27,10 @@ The harness now has a declared machine-readable output contract. CI is configure
 ## Remaining work, in priority order
 1. Confirm CI on subsequent code changes; the initial evidence CI and audit runs both passed.
 2. Add tamper-evident linkage between task input, each arm outcome, summary totals, and a content-addressed receipt hash; test mutations and truncation.
-4. Improve experiment validity: independently score answers, enforce comparable adapter behavior, report paired disagreements and uncertainty, and avoid causal claims from tiny or synthetic samples.
-5. Diagnose PR mergeability and review the diff; do not merge automatically.
-6. Continue the broader repository audit across the 26 currently visible Zygros repositories, starting with `Grossian_Scrolls`, `ZAAI-SYSTEM`, `ZYGROS-PRIME`, `PHOENIX-PROTOCOL-ULTIMATE`, and `CONZETIAN-UNIFIED-INTELLIGANCE`. Inventory visibility and size do not establish implementation quality; inspect contents and tests repository by repository.
-7. Treat live HTC, K50 mesh, Tor/OmniNet, Arweave/AO, OTS, external agents, x402, and revenue as separate activation/verification tasks. No activation or payment is implied by these documentation commits.
+3. Improve experiment validity: independently score answers, enforce comparable adapter behavior, report paired disagreements and uncertainty, and avoid causal claims from tiny or synthetic samples.
+4. Diagnose PR mergeability and review the diff; do not merge automatically.
+5. Continue the broader repository audit across the 26 currently visible Zygros repositories, starting with `Grossian_Scrolls`, `ZAAI-SYSTEM`, `ZYGROS-PRIME`, `PHOENIX-PROTOCOL-ULTIMATE`, and `CONZETIAN-UNIFIED-INTELLIGANCE`. Inventory visibility and size do not establish implementation quality; inspect contents and tests repository by repository.
+6. Treat live HTC, K50 mesh, Tor/OmniNet, Arweave/AO, OTS, external agents, x402, and revenue as separate activation/verification tasks. No activation or payment is implied by these documentation commits.
 
 ## Cause → effect
 Paired-run output → formal schema → executable schema test → automated CI trigger → future regression detection with explicit pending/pass state.
