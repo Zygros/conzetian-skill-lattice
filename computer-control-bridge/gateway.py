@@ -10,7 +10,8 @@ ACTIONS = {"click", "type_text", "key_press", "scroll", "navigate", "read_text",
 READ_TOOLS = {"computer.describe", "computer.observe", "computer.approvals", "computer.audit"}
 WRITE_SCOPES = {
     "click": "computer.click", "type_text": "computer.type", "key_press": "computer.key",
-    "scroll": "computer.scroll", "navigate": "browser.navigate", "open_app": "desktop.open_app"
+    "scroll": "computer.scroll", "navigate": "browser.navigate", "open_app": "desktop.open_app",
+    "read_text": "browser.read_text", "screenshot": "browser.screenshot", "wait": "browser.wait"
 }
 SENSITIVE = ("password", "passwd", "token", "secret", "authorization", "cookie", "api_key")
 
@@ -154,7 +155,7 @@ class Gateway:
                 observed = self.adapter.act(action, payload)
                 after = self.adapter.observe(target)
                 expected = args.get("expected_state")
-                state_text = canonical(after.get("state", {}))
+                state_text = canonical(after)
                 verified = not expected or expected in state_text
                 result = {"action_id": str(uuid.uuid4()), "status": "succeeded" if verified else "uncertain",
                           "observed_state": after, "evidence": [{"before_observation": before["observation_id"],
@@ -189,7 +190,18 @@ def serve():
     if host not in {"127.0.0.1", "::1", "localhost"}:
         raise SystemExit("Reference gateway only permits loopback binding.")
     policy = load_policy(os.environ.get("CUCB_POLICY"))
-    gateway = Gateway(policy=policy)
+    adapter_name = os.environ.get("CUCB_ADAPTER", "mock").lower()
+    adapter = MockAdapter()
+    if adapter_name == "browser":
+        origins = [x.strip() for x in os.environ.get("CUCB_BROWSER_ALLOWED_ORIGINS", "").split(",") if x.strip()]
+        profile = os.environ.get("CUCB_BROWSER_PROFILE")
+        if not origins or not profile:
+            raise SystemExit("Browser mode requires CUCB_BROWSER_ALLOWED_ORIGINS and CUCB_BROWSER_PROFILE.")
+        from browser_adapter import BrowserAdapter
+        adapter = BrowserAdapter(origins, profile, headless=os.environ.get("CUCB_BROWSER_HEADLESS", "false").lower() == "true")
+    elif adapter_name != "mock":
+        raise SystemExit("Unknown CUCB_ADAPTER. Available now: mock, browser.")
+    gateway = Gateway(policy=policy, adapter=adapter)
     class Handler(BaseHTTPRequestHandler):
         def log_message(self, *_): pass
         def do_GET(self):
