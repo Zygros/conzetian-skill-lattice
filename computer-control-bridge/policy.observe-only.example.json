@@ -1,0 +1,17 @@
+{
+  "mode": "observe_only",
+  "scopes": [
+    "computer.describe",
+    "computer.observe"
+  ],
+  "targets": [
+    "mock:test"
+  ],
+  "approval_required_for": [
+    "type_text",
+    "navigate",
+    "open_app"
+  ],
+  "max_actions_per_minute": 20,
+  "session_seconds": 1800
+}
