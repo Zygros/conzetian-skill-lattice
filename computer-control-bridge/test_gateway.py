@@ -2,6 +2,7 @@ import tempfile
 import unittest
 from pathlib import Path
 from gateway import Gateway, MockAdapter
+from browser_adapter import BrowserAdapter
 
 class GatewayTests(unittest.TestCase):
     def make_gateway(self, mode="confirm_writes", scopes=None, approval=None):
@@ -20,6 +21,17 @@ class GatewayTests(unittest.TestCase):
     def call(self, g, action, args=None, **extra):
         return g.handle("computer.act", {"request_id": "request-0001", "target": "mock:test",
             "action": action, "args": args or {}, **extra})
+    def test_browser_adapter_rejects_unlisted_origin(self):
+        adapter = BrowserAdapter(["https://example.test"], "/tmp/cucb-test-profile")
+        with self.assertRaises(PermissionError):
+            adapter._check_origin("https://not-allowed.test/path")
+    def test_browser_adapter_rejects_javascript_scheme(self):
+        adapter = BrowserAdapter(["https://example.test"], "/tmp/cucb-test-profile")
+        with self.assertRaises(PermissionError):
+            adapter._check_origin("javascript:alert(1)")
+    def test_browser_adapter_accepts_allowlisted_https_origin(self):
+        adapter = BrowserAdapter(["https://example.test"], "/tmp/cucb-test-profile")
+        adapter._check_origin("https://example.test/path")
     def test_describe_disclaims_real_device(self):
         g = self.make_gateway()
         self.assertFalse(g.handle("computer.describe", {})["real_device_access"])
