@@ -1,89 +1,69 @@
-# CUCB: setup and implementation plan
+# CUCB: setup and implementation
 
-The Conzetian Universal Computer-Control Bridge (CUCB) is the execution layer for the existing `conzetian-computer-operator` skill. This folder defines the shared contract; platform adapters are installed separately and must pass local conformance tests before being advertised as available.
+The Conzetian Universal Computer-Control Bridge (CUCB) is the execution layer for the `conzetian-computer-operator` skill.
 
-## Current implementation status
+## Cascading implementation status
 
-- [x] Portable standard and architecture
-- [x] JSON Schema contracts for describe, observe, act, approvals, and audit
-- [x] Action vocabulary and argument schemas
-- [x] Permission boundaries, failure semantics, and conformance levels
-- [ ] Runnable gateway implementation
-- [ ] Android adapter
-- [ ] Desktop adapter
-- [ ] Browser adapter
-- [ ] End-to-end device tests
+- [x] **Phase 0: Standard** — architecture, tool contracts, permission boundaries and failure semantics.
+- [x] **Phase 1: Reference gateway** — local HTTP gateway, bearer-token authentication, loopback-only binding, policy checks, action allowlist, rate limit, session expiry, append-only JSONL audit, idempotency handling and a mock adapter.
+- [x] **Phase 2: Mock verification suite written** — executable unit tests for observe-only denial, scopes, target allowlist, approvals-needed response, postcondition mismatch, idempotency, audit and stale observations.
+- [x] **Phase 2b: CI wired** — GitHub Actions workflow compiles the Python and runs the unit tests on push, pull request and manual dispatch.
+- [ ] **Phase 2c: Tests executed and reviewed** — pending a successful CI run; code being committed is not proof that tests passed.
+- [ ] **Phase 3: Browser adapter** — not implemented.
+- [ ] **Phase 4: Desktop adapter** — not implemented.
+- [ ] **Phase 5: Android adapter** — not implemented.
+- [ ] **Phase 6: Live end-to-end verification** — not run; no device access claimed.
 
-This repository addition is a specification package, not a running service. It has not accessed or controlled a device.
+The current gateway uses `MockAdapter` only. Its own describe response explicitly says `real_device_access: false`. It is a local reference implementation, not yet a production-hardened bridge. Human approval resolution and MCP transport still need to be implemented before consequential real actions.
 
-## Setup order
+## Run locally
 
-### 1. Choose a host, then install the bridge there
+Requires Python 3.10+ and no third-party packages.
 
-Run the bridge on the machine you want the AI to control. For Android, that can be the phone itself; for desktop, run it in the logged-in user session; for browser-only control, run a browser adapter with a dedicated profile. Do not run a public internet listener as a first setup.
-
-### 2. Start observe-only
-
-Create a local policy with no write scopes. Allow only `computer.describe` and `computer.observe`. Verify platform, adapter version, target allowlist, and scopes before enabling actions.
-
-### 3. Add narrowly scoped actions
-
-Grant one target and one action at a time. Begin with harmless actions such as opening a test page or scrolling a local test page. Use `confirm_writes` for all mutations until the approval and audit paths have passed tests.
-
-### 4. Connect an AI client
-
-Expose the same tool contracts through the client's supported tool transport, preferably MCP. For local-only HTTP, bind to loopback and require an unpredictable bearer token stored outside prompts/logs. For remote access, use an authenticated private tunnel; never port-forward an unauthenticated controller.
-
-### 5. Verify, then advertise capabilities
-
-Run the conformance cases in `conformance-tests.json`. An adapter must not advertise a capability until the harmless test action and post-action observation both succeed. Report the actual platform and level achieved.
-
-## Platform-specific setup notes
-
-### Android / Termux
-- Install Termux from a trusted source and keep packages updated.
-- Use a local Android AccessibilityService companion app for UI interaction, or use ADB over USB for a developer-owned device. Termux alone does not automatically gain Android UI-control privileges.
-- Accessibility must be enabled explicitly by the device owner in Android Settings. Show a persistent notification while control is active and provide an immediate stop switch.
-- Bind local APIs to `127.0.0.1` by default. Do not expose the bridge to Wi-Fi until authentication, firewall rules, and pairing are implemented and tested.
-- Validate on a harmless test screen before allowing navigation or typing into real apps.
-
-### Windows / macOS / Linux
-- Run as the signed-in user, never root/Administrator for ordinary UI control.
-- Use an OS accessibility API or a UI automation adapter. Keep allowed app IDs and filesystem roots explicit.
-- Start with a disposable test application/window. Require confirmation before deletion, overwrites, external submissions, purchases, or permission changes.
-
-### Browser
-- Use a dedicated browser profile and Playwright/WebDriver/CDP adapter.
-- Restrict allowed origins. Do not export browser cookies or passwords to the AI.
-- Test on a local fixture page first. Public posts, messages, checkout, and account/security changes require explicit confirmation.
-
-## Suggested repo layout for the runnable gateway
-
-```text
-cucb/
-  gateway/            # schema validation, auth, rate limits, policy
-  adapters/
-    android/           # accessibility bridge or ADB adapter
-    desktop/           # OS accessibility/UI automation
-    browser/           # Playwright/WebDriver
-    mock/              # deterministic test adapter
-  policy/
-    example-policy.json
-  tests/
-    conformance-tests.json
-  audit/
-    append-only JSONL, redacted
+```sh
+cd computer-control-bridge
+python -m py_compile gateway.py test_gateway.py
+python -m unittest -v
 ```
 
-## Security minimums before remote operation
+Start the mock gateway on loopback only. Set a unique token outside prompts and source control:
 
-1. Default deny and explicit per-action scopes.
-2. Local pairing plus authentication; never rely on obscurity.
-3. Short-lived, single-use approvals bound to the exact target and action payload.
-4. Request IDs, idempotency keys, stale-observation checks, and rate limits.
-5. Append-only audit events with secret redaction.
-6. Stop button and session expiry.
+```sh
+export CUCB_TOKEN="$(python -c 'import secrets; print(secrets.token_urlsafe(32))')"
+python gateway.py
+```
+
+In another terminal, use the token to inspect the mock-only gateway:
+
+```sh
+curl -H "Authorization: Bearer $CUCB_TOKEN" http://127.0.0.1:8765/health
+curl -H "Authorization: Bearer $CUCB_TOKEN" http://127.0.0.1:8765/tools
+curl -X POST -H "Authorization: Bearer $CUCB_TOKEN" -H "Content-Type: application/json" \
+  -d '{"tool":"computer.describe","arguments":{}}' http://127.0.0.1:8765/call
+```
+
+Expected description includes `"platform":"mock"` and `"real_device_access":false`. Do not expose this reference server beyond loopback. The bearer token is an initial local guard, not a complete remote pairing or production authentication design.
+
+## Platform integration order
+
+### Browser
+Use a dedicated browser profile and a Playwright/WebDriver/CDP adapter. Restrict origins and keep cookies/passwords out of AI output. Test on a local fixture page. Confirm public posts, messages, checkout and account/security changes.
+
+### Desktop
+Run as the signed-in user, not root/Administrator. Use OS accessibility/UI automation and allowlisted applications/filesystem roots. Test with a disposable window.
+
+### Android / Termux
+Termux does not inherently have full Android UI control. Use a companion app with a user-enabled AccessibilityService or developer-owned ADB access. Keep the bridge local-only, show an active-session indicator and provide a stop switch.
+
+## Required security invariants
+
+1. Default deny; explicit scopes and target allowlists.
+2. Observe first; stale observations cannot authorize coordinate actions.
+3. Approval must be bound to the exact action/payload, expire, and be single-use.
+4. Idempotency keys prevent accidental duplicate non-idempotent actions.
+5. Verify postconditions; report `uncertain` when an outcome cannot be proven.
+6. Redact secrets; append audit events instead of silently rewriting them.
 7. No generic shell tool in the baseline.
-8. Do not retry a potentially submitted action until observing whether it already occurred.
+8. Do not retry an action that may have submitted until observing whether it already happened.
 
-See [SPEC.md](SPEC.md), [tool-schemas.json](tool-schemas.json), and [conformance-tests.json](conformance-tests.json).
+See [SPEC.md](SPEC.md), [tool-schemas.json](tool-schemas.json), [policy.observe-only.example.json](policy.observe-only.example.json), and [conformance-tests.json](conformance-tests.json).
