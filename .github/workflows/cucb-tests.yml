@@ -1,0 +1,26 @@
+name: CUCB reference tests
+on:
+  push:
+    paths:
+      - "computer-control-bridge/**"
+      - ".github/workflows/cucb-tests.yml"
+  pull_request:
+    paths:
+      - "computer-control-bridge/**"
+      - ".github/workflows/cucb-tests.yml"
+  workflow_dispatch:
+jobs:
+  unit-tests:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Compile gateway
+        run: python -m py_compile computer-control-bridge/gateway.py computer-control-bridge/test_gateway.py
+      - name: Run mock-adapter tests
+        working-directory: computer-control-bridge
+        run: python -m unittest -v
