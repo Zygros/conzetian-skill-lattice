@@ -20,7 +20,7 @@ jobs:
         with:
           python-version: "3.12"
       - name: Compile gateway
-        run: python -m py_compile computer-control-bridge/gateway.py computer-control-bridge/test_gateway.py
+        run: python -m py_compile computer-control-bridge/gateway.py computer-control-bridge/browser_adapter.py computer-control-bridge/test_gateway.py
       - name: Run mock-adapter tests
         working-directory: computer-control-bridge
         run: python -m unittest -v
