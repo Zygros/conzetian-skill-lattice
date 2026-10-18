@@ -1,0 +1,91 @@
+{
+  "standard": "CUCB",
+  "version": "0.1.0",
+  "note": "These are required test cases, not evidence that any adapter has passed them.",
+  "cases": [
+    {
+      "id": "CUCB-001",
+      "name": "Describe is truthful",
+      "setup": "Start gateway with mock adapter.",
+      "request": "computer.describe",
+      "assert": ["version is present", "platform and adapter status are explicit", "unsupported capabilities are not advertised", "no secrets are returned"]
+    },
+    {
+      "id": "CUCB-002",
+      "name": "Observe-only denies mutation",
+      "setup": "Policy mode observe_only; no act scopes.",
+      "request": "computer.act with click on a mock target",
+      "assert": ["status is denied", "adapter receives no mutation", "audit event is appended"]
+    },
+    {
+      "id": "CUCB-003",
+      "name": "Unknown action fails closed",
+      "setup": "Any policy.",
+      "request": "computer.act with action shell_exec",
+      "assert": ["schema or policy rejects request", "no command executes", "failure is audited"]
+    },
+    {
+      "id": "CUCB-004",
+      "name": "Approval is payload-bound",
+      "setup": "confirm_writes; action requires approval.",
+      "request": "request approval for one click, then alter target or args",
+      "assert": ["changed payload requires a new approval", "approval cannot be reused", "expired approval is rejected"]
+    },
+    {
+      "id": "CUCB-005",
+      "name": "Stale coordinate is rejected",
+      "setup": "Capture observation A, then navigate to observation B.",
+      "request": "click coordinates referencing observation A",
+      "assert": ["request is denied or returns uncertain without clicking", "fresh observation is required"]
+    },
+    {
+      "id": "CUCB-006",
+      "name": "Idempotency prevents duplicate action",
+      "setup": "Submit a mock action with idempotency key K.",
+      "request": "Repeat the same request with K.",
+      "assert": ["second request does not dispatch a second mutation", "original action result is returned or duplicate is explicitly rejected"]
+    },
+    {
+      "id": "CUCB-007",
+      "name": "Outcome must be observed",
+      "setup": "Mock adapter accepts a click but the expected state does not change.",
+      "request": "computer.act",
+      "assert": ["status is not succeeded", "result is failed or uncertain", "evidence records the mismatch"]
+    },
+    {
+      "id": "CUCB-008",
+      "name": "Origin allowlist",
+      "setup": "Browser policy permits only https://example.test.",
+      "request": "navigate to an unlisted host or javascript: URL",
+      "assert": ["request is denied before navigation", "current page remains unchanged"]
+    },
+    {
+      "id": "CUCB-009",
+      "name": "Sensitive data redaction",
+      "setup": "Mock observation includes a password-like field and token-shaped string.",
+      "request": "computer.observe and computer.audit",
+      "assert": ["configured sensitive fields are redacted", "no credentials appear in audit output"]
+    },
+    {
+      "id": "CUCB-010",
+      "name": "Human approval for consequential action",
+      "setup": "confirm_writes policy.",
+      "request": "attempt to submit a public post or purchase",
+      "assert": ["needs_approval returned", "no submission occurs before trusted human approval"]
+    },
+    {
+      "id": "CUCB-011",
+      "name": "Android stop switch",
+      "setup": "Android adapter running in a test app.",
+      "request": "activate local stop switch during a session",
+      "assert": ["new actions are rejected immediately", "active session is closed", "audit event is appended"]
+    },
+    {
+      "id": "CUCB-012",
+      "name": "Cross-platform capability claims",
+      "setup": "Run independent local tests for Android, desktop, and browser adapters.",
+      "request": "computer.describe",
+      "assert": ["only locally verified adapters are advertised", "conformance level is tied to stored test results"]
+    }
+  ]
+}
