@@ -1,0 +1,23 @@
+{
+  "mode": "confirm_writes",
+  "scopes": [
+    "computer.describe",
+    "computer.observe",
+    "computer.click",
+    "computer.type",
+    "computer.scroll",
+    "browser.navigate",
+    "browser.read_text",
+    "browser.screenshot",
+    "browser.wait"
+  ],
+  "targets": [
+    "browser:test-session"
+  ],
+  "approval_required_for": [
+    "navigate",
+    "type_text"
+  ],
+  "max_actions_per_minute": 20,
+  "session_seconds": 1800
+}
