@@ -1,0 +1,87 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Conzetian Universal Computer-Control Bridge tool contracts",
+  "version": "0.1.0",
+  "schemas": {
+    "describe": {
+      "type": "object",
+      "properties": {},
+      "additionalProperties": false
+    },
+    "observe": {
+      "type": "object",
+      "required": ["target"],
+      "properties": {
+        "target": { "type": "string", "minLength": 1, "maxLength": 256 },
+        "observation_id": { "type": "string", "maxLength": 256 },
+        "include_screenshot": { "type": "boolean", "default": false },
+        "max_text_chars": { "type": "integer", "minimum": 0, "maximum": 20000, "default": 4000 }
+      },
+      "additionalProperties": false
+    },
+    "act": {
+      "type": "object",
+      "required": ["request_id", "target", "action", "args"],
+      "properties": {
+        "request_id": { "type": "string", "minLength": 8, "maxLength": 128 },
+        "idempotency_key": { "type": "string", "minLength": 8, "maxLength": 128 },
+        "target": { "type": "string", "minLength": 1, "maxLength": 256 },
+        "observation_id": { "type": "string", "maxLength": 256 },
+        "action": {
+          "enum": ["click", "type_text", "key_press", "scroll", "navigate", "read_text", "screenshot", "wait", "open_app"]
+        },
+        "args": { "type": "object" },
+        "expected_state": { "type": "string", "maxLength": 2000 },
+        "timeout_ms": { "type": "integer", "minimum": 100, "maximum": 30000, "default": 5000 }
+      },
+      "additionalProperties": false
+    },
+    "act_result": {
+      "type": "object",
+      "required": ["action_id", "status"],
+      "properties": {
+        "action_id": { "type": "string" },
+        "status": {
+          "enum": ["succeeded", "failed", "needs_approval", "denied", "unsupported", "timed_out", "uncertain"]
+        },
+        "observed_state": { "type": ["object", "null"] },
+        "evidence": { "type": "array", "items": { "type": "object" } },
+        "error": { "type": ["object", "null"] }
+      },
+      "additionalProperties": false
+    },
+    "approvals": {
+      "type": "object",
+      "properties": {
+        "status": { "enum": ["pending", "approved", "denied", "expired"] },
+        "limit": { "type": "integer", "minimum": 1, "maximum": 100, "default": 20 }
+      },
+      "additionalProperties": false
+    },
+    "audit": {
+      "type": "object",
+      "properties": {
+        "cursor": { "type": ["string", "null"] },
+        "limit": { "type": "integer", "minimum": 1, "maximum": 100, "default": 20 },
+        "since": { "type": ["string", "null"], "format": "date-time" }
+      },
+      "additionalProperties": false
+    }
+  },
+  "action_args": {
+    "click": {
+      "oneOf": [
+        { "type": "object", "required": ["element_id"], "properties": { "element_id": { "type": "string", "minLength": 1, "maxLength": 256 } }, "additionalProperties": false },
+        { "type": "object", "required": ["x", "y"], "properties": { "x": { "type": "integer", "minimum": 0 }, "y": { "type": "integer", "minimum": 0 } }, "additionalProperties": false }
+      ]
+    },
+    "type_text": { "type": "object", "required": ["text"], "properties": { "text": { "type": "string", "maxLength": 4000 } }, "additionalProperties": false },
+    "key_press": { "type": "object", "required": ["key"], "properties": { "key": { "enum": ["ENTER", "TAB", "ESC", "SPACE", "UP", "DOWN", "LEFT", "RIGHT", "CTRL+L", "CTRL+C", "CTRL+V", "CMD+L", "CMD+C", "CMD+V"] } }, "additionalProperties": false },
+    "scroll": { "type": "object", "required": ["direction", "amount"], "properties": { "direction": { "enum": ["up", "down", "left", "right"] }, "amount": { "type": "integer", "minimum": 1, "maximum": 1200 } }, "additionalProperties": false },
+    "navigate": { "type": "object", "required": ["url"], "properties": { "url": { "type": "string", "format": "uri", "maxLength": 2048 } }, "additionalProperties": false },
+    "read_text": { "type": "object", "properties": { "selector": { "type": "string", "maxLength": 512 } }, "additionalProperties": false },
+    "screenshot": { "type": "object", "properties": { "redact_sensitive": { "type": "boolean", "default": true } }, "additionalProperties": false },
+    "wait": { "type": "object", "required": ["condition", "timeout_ms"], "properties": { "condition": { "type": "string", "maxLength": 512 }, "timeout_ms": { "type": "integer", "minimum": 100, "maximum": 10000 } }, "additionalProperties": false },
+    "open_app": { "type": "object", "required": ["app_id"], "properties": { "app_id": { "type": "string", "minLength": 1, "maxLength": 256 } }, "additionalProperties": false }
+  }
+}
