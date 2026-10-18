@@ -9,12 +9,12 @@ The Conzetian Universal Computer-Control Bridge (CUCB) is the execution layer fo
 - [x] **Phase 2: Mock verification suite written** — executable unit tests for observe-only denial, scopes, target allowlist, approvals-needed response, postcondition mismatch, idempotency, audit and stale observations.
 - [x] **Phase 2b: CI wired** — GitHub Actions workflow compiles the Python and runs the unit tests on push, pull request and manual dispatch.
 - [x] **Phase 2c: CI tests executed** — GitHub Actions run [39163517135](https://github.com/Zygros/conzetian-skill-lattice/actions/runs/39163517135) completed successfully. Python compilation and the mock-adapter unit test suite both passed.
-- [ ] **Phase 3: Browser adapter** — not implemented.
+- [x] **Phase 3: Browser adapter implementation** — opt-in Playwright adapter added with persistent user profile, explicit HTTPS/localhost origin allowlist, visible-text observation, click/type/scroll/navigation/read-text/screenshot/wait actions. **Live browser run remains unverified.**
 - [ ] **Phase 4: Desktop adapter** — not implemented.
 - [ ] **Phase 5: Android adapter** — not implemented.
 - [ ] **Phase 6: Live end-to-end verification** — not run; no device access claimed.
 
-The current gateway uses `MockAdapter` only. Its own describe response explicitly says `real_device_access: false`. It is a local reference implementation, not yet a production-hardened bridge. Human approval resolution and MCP transport still need to be implemented before consequential real actions.
+The current gateway uses `MockAdapter` only. Its own describe response explicitly says `real_device_access: false`. It is a local reference implementation, not yet a production-hardened bridge. Human approval resolution and MCP transport still need to be implemented before consequential real actions. Pending approvals currently fail safe but cannot yet be approved through a dedicated trusted UI. Browser adapter code exists, but no live browser session has been launched from this environment.
 
 ## Run locally
 
@@ -66,4 +66,4 @@ Termux does not inherently have full Android UI control. Use a companion app wit
 7. No generic shell tool in the baseline.
 8. Do not retry an action that may have submitted until observing whether it already happened.
 
-See [SPEC.md](SPEC.md), [tool-schemas.json](tool-schemas.json), [policy.observe-only.example.json](policy.observe-only.example.json), and [conformance-tests.json](conformance-tests.json).
+See [SPEC.md](SPEC.md), [tool-schemas.json](tool-schemas.json), [policy.observe-only.example.json](policy.observe-only.example.json), [policy.browser.example.json](policy.browser.example.json), [requirements-browser.txt](requirements-browser.txt), and [conformance-tests.json](conformance-tests.json).
