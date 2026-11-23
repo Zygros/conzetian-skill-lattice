@@ -31,16 +31,17 @@ class ReadOnlySkillLatticeTests(unittest.TestCase):
     def test_index_is_sorted_and_hash_linked(self):
         write_skill(self.root, "skills/zeta", "zeta")
         alpha = write_skill(self.root, "skills/alpha", "alpha")
-        records = list_skills(self.root)
-        self.assertEqual([item.name for item in records], ["alpha", "zeta"])
-        self.assertEqual(records[0].sha256, hashlib.sha256(alpha.read_bytes()).hexdigest())
-        self.assertEqual(records[0].size_bytes, len(alpha.read_bytes()))
+        index = list_skills(self.root)
+        self.assertEqual([item.name for item in index.skills], ["alpha", "zeta"])
+        self.assertEqual(index.skills[0].sha256, hashlib.sha256(alpha.read_bytes()).hexdigest())
+        self.assertEqual(index.skills[0].size_bytes, len(alpha.read_bytes()))
+        self.assertEqual(index.invalid, ())
 
     def test_read_returns_markdown_without_executing_it(self):
         marker = self.root / "executed.txt"
         body = f'If executed, this would write: {marker}\n'
         path = write_skill(self.root, "skills/no-exec", "no-exec", body)
-        descriptor = list_skills(self.root)[0]
+        descriptor = list_skills(self.root).skills[0]
         content = read_skill(self.root, descriptor)
         self.assertIn("If executed", content)
         self.assertFalse(marker.exists())
@@ -75,14 +76,32 @@ class ReadOnlySkillLatticeTests(unittest.TestCase):
                 link.symlink_to(target)
             except (OSError, NotImplementedError):
                 self.skipTest("symlinks are unavailable on this platform")
-            with self.assertRaises(ValueError):
-                list_skills(self.root)
+            index = list_skills(self.root)
+            self.assertEqual(index.skills, ())
+            self.assertTrue(any("symlinked skill paths" in item.reason for item in index.invalid))
+            with self.assertRaisesRegex(ValueError, "invalid skill entries"):
+                list_skills(self.root, strict=True)
+
+    def test_invalid_legacy_skill_does_not_discard_valid_entries(self):
+        write_skill(self.root, "skills/valid", "valid")
+        invalid = self.root / "skills" / "legacy" / "SKILL.md"
+        invalid.parent.mkdir(parents=True)
+        invalid.write_text("legacy file without frontmatter\\n", encoding="utf-8")
+        index = list_skills(self.root)
+        self.assertEqual([item.name for item in index.skills], ["valid"])
+        self.assertEqual(len(index.invalid), 1)
+        self.assertEqual(index.invalid[0].relative_path, "skills/legacy/SKILL.md")
+        with self.assertRaisesRegex(ValueError, "invalid skill entries"):
+            list_skills(self.root, strict=True)
 
     def test_duplicate_names_are_rejected(self):
         write_skill(self.root, "skills/one", "duplicate")
         write_skill(self.root, "skills/two", "duplicate")
-        with self.assertRaisesRegex(ValueError, "duplicate skill name"):
-            list_skills(self.root)
+        index = list_skills(self.root)
+        self.assertEqual([item.name for item in index.skills], ["duplicate"])
+        self.assertTrue(any("duplicate skill name" in item.reason for item in index.invalid))
+        with self.assertRaisesRegex(ValueError, "invalid skill entries"):
+            list_skills(self.root, strict=True)
 
 
 if __name__ == "__main__":
