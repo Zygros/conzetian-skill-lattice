@@ -65,18 +65,18 @@ class ReadOnlySkillLatticeTests(unittest.TestCase):
             read_skill(self.root, descriptor)
 
     def test_symlinked_skill_is_rejected(self):
-        outside = self.root.parent / "outside-skill"
-        outside.mkdir(exist_ok=True)
-        target = write_skill(outside, "outside", "outside")
-        link_dir = self.root / "skills"
-        link_dir.mkdir()
-        link = link_dir / "linked"
-        try:
-            link.symlink_to(target.parent, target_is_directory=True)
-        except (OSError, NotImplementedError):
-            self.skipTest("symlinks are unavailable on this platform")
-        with self.assertRaises(ValueError):
-            list_skills(self.root)
+        with tempfile.TemporaryDirectory(dir=self.root.parent) as outside_dir:
+            outside = Path(outside_dir)
+            target = write_skill(outside, "outside", "outside")
+            link_dir = self.root / "skills" / "linked"
+            link_dir.mkdir(parents=True)
+            link = link_dir / "SKILL.md"
+            try:
+                link.symlink_to(target)
+            except (OSError, NotImplementedError):
+                self.skipTest("symlinks are unavailable on this platform")
+            with self.assertRaises(ValueError):
+                list_skills(self.root)
 
     def test_duplicate_names_are_rejected(self):
         write_skill(self.root, "skills/one", "duplicate")
