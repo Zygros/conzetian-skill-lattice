@@ -25,6 +25,18 @@ class SkillDescriptor:
     size_bytes: int
 
 
+@dataclass(frozen=True)
+class SkillIssue:
+    relative_path: str
+    reason: str
+
+
+@dataclass(frozen=True)
+class SkillIndex:
+    skills: tuple[SkillDescriptor, ...]
+    invalid: tuple[SkillIssue, ...]
+
+
 def _frontmatter_fields(text: str) -> dict[str, str]:
     lines = text.splitlines()
     if not lines or lines[0].strip() != "---":
@@ -44,7 +56,9 @@ def _frontmatter_fields(text: str) -> dict[str, str]:
 
 def _resolve_skill(root: Path, relative_path: str) -> Path:
     rel = PurePosixPath(relative_path)
-    if rel.is_absolute() or not rel.parts or any(part in ("", ".", "..") for part in rel.parts):
+    if rel.is_absolute() or not rel.parts or any(
+        part in ("", ".", "..") for part in rel.parts
+    ):
         raise ValueError("skill path must be a confined relative path")
     if rel.name != "SKILL.md":
         raise ValueError("only SKILL.md files may be read")
@@ -64,44 +78,60 @@ def _resolve_skill(root: Path, relative_path: str) -> Path:
     return resolved
 
 
-def list_skills(root: Path) -> tuple[SkillDescriptor, ...]:
-    """Return a deterministic, hash-linked index of valid SKILL.md files."""
+def list_skills(root: Path, *, strict: bool = False) -> SkillIndex:
+    """Index valid skills while retaining diagnostics for invalid entries.
+
+    With strict=True, any invalid entry raises ValueError. The default returns
+    all valid descriptors plus a separate invalid-entry list.
+    """
     root = Path(root).expanduser().resolve(strict=True)
     if not root.is_dir():
         raise ValueError("lattice root must be a directory")
 
     records: list[SkillDescriptor] = []
-    seen_names: set[str] = set()
+    issues: list[SkillIssue] = []
+    seen_names: dict[str, str] = {}
+
     for candidate in sorted(root.rglob("SKILL.md"), key=lambda path: path.as_posix()):
         relative = candidate.relative_to(root).as_posix()
-        path = _resolve_skill(root, relative)
-        raw = path.read_bytes()
         try:
+            path = _resolve_skill(root, relative)
+            raw = path.read_bytes()
             text = raw.decode("utf-8")
-        except UnicodeDecodeError as exc:
-            raise ValueError(f"{relative}: skill is not valid UTF-8") from exc
+            errors = validate_skill_text(text, relative)
+            if errors:
+                raise ValueError("; ".join(errors))
 
-        errors = validate_skill_text(text, relative)
-        if errors:
-            raise ValueError("; ".join(errors))
-
-        fields = _frontmatter_fields(text)
-        name = fields["name"]
-        description = fields["description"]
-        if name in seen_names:
-            raise ValueError(f"duplicate skill name: {name}")
-        seen_names.add(name)
-        records.append(
-            SkillDescriptor(
-                name=name,
-                description=description,
-                relative_path=relative,
-                sha256=hashlib.sha256(raw).hexdigest(),
-                size_bytes=len(raw),
+            fields = _frontmatter_fields(text)
+            name = fields.get("name", "").strip()
+            description = fields.get("description", "").strip()
+            if not name or not description:
+                raise ValueError("frontmatter must include non-empty name and description")
+            if name in seen_names:
+                raise ValueError(
+                    f"duplicate skill name {name!r}; first seen at {seen_names[name]}"
+                )
+            seen_names[name] = relative
+            records.append(
+                SkillDescriptor(
+                    name=name,
+                    description=description,
+                    relative_path=relative,
+                    sha256=hashlib.sha256(raw).hexdigest(),
+                    size_bytes=len(raw),
+                )
             )
-        )
+        except (OSError, UnicodeDecodeError, ValueError) as exc:
+            issues.append(SkillIssue(relative, str(exc)))
 
-    return tuple(sorted(records, key=lambda item: (item.name, item.relative_path)))
+    skills = tuple(sorted(records, key=lambda item: (item.name, item.relative_path)))
+    invalid = tuple(sorted(issues, key=lambda item: item.relative_path))
+    if strict and invalid:
+        summary = "; ".join(
+            f"{item.relative_path}: {item.reason}" for item in invalid
+        )
+        raise ValueError(f"invalid skill entries: {summary}")
+    return SkillIndex(skills=skills, invalid=invalid)
 
 
 def read_skill(root: Path, descriptor: SkillDescriptor) -> str:
