@@ -49,7 +49,7 @@ class ReadOnlySkillLatticeTests(unittest.TestCase):
 
     def test_modified_skill_is_rejected_after_indexing(self):
         path = write_skill(self.root, "skills/change", "change")
-        descriptor = list_skills(self.root)[0]
+        descriptor = list_skills(self.root).skills[0]
         path.write_text(path.read_text(encoding="utf-8") + "\nchanged\n", encoding="utf-8")
         with self.assertRaisesRegex(ValueError, "content changed"):
             read_skill(self.root, descriptor)
