@@ -1,0 +1,28 @@
+name: Phoenix Evidence CI
+
+on:
+  push:
+    branches:
+      - main
+      - "conzetian/**"
+  pull_request:
+    branches:
+      - main
+
+permissions:
+  contents: read
+
+jobs:
+  paired-harness-and-receipt-schema:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install schema validator
+        run: python -m pip install --upgrade jsonschema
+      - name: Run paired harness and receipt schema tests
+        run: python -m unittest discover -s experiments -p "test_*.py" -v
