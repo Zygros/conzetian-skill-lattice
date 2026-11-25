@@ -7,6 +7,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 import hashlib
+import logging
 import re
 from pathlib import Path, PurePosixPath
 
@@ -14,6 +15,8 @@ from scripts.validate_skill_frontmatter import validate_skill_text
 
 
 _FIELD_RE = re.compile(r"^([A-Za-z][A-Za-z0-9_-]*):\s*(.*)$")
+
+_LOGGER = logging.getLogger(__name__)
 
 
 @dataclass(frozen=True)
@@ -82,7 +85,9 @@ def list_skills(root: Path, *, strict: bool = False) -> SkillIndex:
     """Index valid skills while retaining diagnostics for invalid entries.
 
     With strict=True, any invalid entry raises ValueError. The default returns
-    all valid descriptors plus a separate invalid-entry list.
+    all valid descriptors plus a separate invalid-entry list. Each skipped
+    entry is also logged as a warning with its path and reason, so failures
+    are never silently dropped.
     """
     root = Path(root).expanduser().resolve(strict=True)
     if not root.is_dir():
@@ -122,7 +127,11 @@ def list_skills(root: Path, *, strict: bool = False) -> SkillIndex:
                 )
             )
         except (OSError, UnicodeDecodeError, ValueError) as exc:
-            issues.append(SkillIssue(relative, str(exc)))
+            issue = SkillIssue(relative, str(exc))
+            issues.append(issue)
+            _LOGGER.warning(
+                "skipping invalid skill %s: %s", issue.relative_path, issue.reason
+            )
 
     skills = tuple(sorted(records, key=lambda item: (item.name, item.relative_path)))
     invalid = tuple(sorted(issues, key=lambda item: item.relative_path))
