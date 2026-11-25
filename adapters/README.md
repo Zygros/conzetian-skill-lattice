@@ -4,7 +4,7 @@
 
 ## Contract
 
-- `list_skills(root)` returns a `SkillIndex` with valid descriptors sorted by skill name/path and a separate `invalid` diagnostics tuple. Invalid legacy entries do not discard valid descriptors. Use `strict=True` to reject any invalid entry.
+- `list_skills(root)` returns a `SkillIndex` with valid descriptors sorted by skill name/path and a separate `invalid` diagnostics tuple. Invalid legacy entries do not discard valid descriptors. Each skipped entry is also logged as a warning with its path and reason. Use `strict=True` to reject any invalid entry.
 - Each descriptor carries the frontmatter identity, description, relative `SKILL.md` path, SHA-256 digest, and byte length.
 - `read_skill(root, descriptor)` returns the Markdown only if its path remains inside the lattice root, no path component is a symlink, the frontmatter remains valid, and the content hash still matches the descriptor.
 - Duplicate skill names, malformed frontmatter, invalid UTF-8, path traversal, and symlinked skill files are recorded in `SkillIndex.invalid`; post-index content changes fail closed when read.
